@@ -1,3 +1,7 @@
+#ifndef DOOR_CONTROL_H
+#define DOOR_CONTROL_H
+
+
 // PINs motor
 const int ControlPin1 = D5;  // cannot use D1, why?
 const int ControlPin2 = D6;
@@ -19,6 +23,43 @@ const int Speed = 1023;  // MaxSpeed 1023 is around 4sec/rev
 // door input resolution (limit switches, buttons, LEDs...)
 const int LoopSleep = 10;
 
+
+void startMove(int direction) 
+{
+  digitalWrite(ControlPin1, direction == 1);
+  digitalWrite(ControlPin2, direction == -1);
+  analogWrite(EnablePin, Speed);
+  //digitalWrite(EnablePin, 1);
+  isMoving = true;
+  latestDirection = direction;
+}
+
+void stopMove()
+{
+  analogWrite(EnablePin, 0);
+  //digitalWrite(EnablePin, 0);
+  isMoving = false;
+}
+
+bool doorIsMoving() 
+{
+  return isMoving;
+}
+
+int getDoorLatestDirection(){
+  return latestDirection;
+}
+
+bool doorIsClosed()
+{
+  return digitalRead(LimitBotPin) == 1;
+}
+bool doorIsOpen()
+{
+  return digitalRead(LimitTopPin) == 1;
+}
+
+
 void doorStateInit() 
 {
   pinMode(LimitTopPin, INPUT);
@@ -34,19 +75,6 @@ bool doorButtonPressed()
 {
   return digitalRead(ButtonPin) == 1;
 }
-
-void doorToggleState() 
-{
-  if (doorIsOpen())
-  {
-    doorClose();
-  }
-  else
-  {
-    doorOpen();
-  }
-}
-
 
 bool doorOpen() 
 {
@@ -147,38 +175,5 @@ bool doorClose()
   return true;
 }
 
-void startMove(int direction) 
-{
-  digitalWrite(ControlPin1, direction == 1);
-  digitalWrite(ControlPin2, direction == -1);
-  analogWrite(EnablePin, Speed);
-  //digitalWrite(EnablePin, 1);
-  isMoving = true;
-  latestDirection = direction;
-}
 
-void stopMove()
-{
-  analogWrite(EnablePin, 0);
-  //digitalWrite(EnablePin, 0);
-  isMoving = false;
-}
-
-bool doorIsMoving() 
-{
-  return isMoving;
-}
-
-int getDoorLatestDirection(){
-  return latestDirection;
-}
-
-bool doorIsClosed()
-{
-  return digitalRead(LimitBotPin) == 1;
-}
-bool doorIsOpen()
-{
-  return digitalRead(LimitTopPin) == 1;
-}
-  
+#endif

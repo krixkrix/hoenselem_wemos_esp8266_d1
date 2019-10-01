@@ -4,18 +4,12 @@
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include "Config.h"
-
-/*
-Please create a file Secrets.h with your Wifi Credentials, like this:
-const char* ssid = "YOUR-SSID";
-const char* password = "YOUR_PASSWORD";
-
-DO NOT submit the file to GIT
-*/
-#include "Secrets.h"
+#include "IftttReporting.h"
+#include "WifiUtil.h"
+#include "LedUtil.h"
+#include "DoorControl.h"
 
 WiFiUDP ntpUDP;
-int WifiTimeoutSeconds = 20;
 
 /**
  * NTP setup
@@ -44,8 +38,6 @@ void setup()
   WiFi.mode(WIFI_STA);        //Only Station No AP, This line hides the viewing of ESP as wifi hotspot
   
   connectWifi();  
-  getGoogleConfig(config);
-  config.print();
   
   setGreen(HIGH);
   setRed(HIGH);
@@ -66,6 +58,8 @@ void setup()
 
   doorStateInit();
 
+  getGoogleConfig(config);
+
   // TEST CODE TO INJECT TIME TRIGGERS
   /*
   config.open_hour = timeClient.getHours();
@@ -74,10 +68,9 @@ void setup()
   config.close_minutes = config.open_minutes + 2;
   */
 
-  char buf[50];
-  sprintf(buf, "Now: %s", timeClient.getFormattedTime().c_str());
-  ifttt_webhook("Board initialized", "ok", buf);
-  
+  char buf[100];
+  config.format(buf); 
+  ifttt_webhook("Board initialized", true, buf);
 }
 
 
@@ -100,9 +93,10 @@ void loop()
       {
         if (!config.equals(configTmp))
         {
-          Serial.println("New config");
           config = configTmp;
-          config.print();
+          char buf[100];
+          config.format(buf); 
+          ifttt_webhook("New Config", true, buf);
         }
       }
       else {
@@ -131,9 +125,10 @@ void loop()
       doorClose();
     }
 
-    if (hours%3 == 0 && minutes == 0) 
+    // log status every X hours
+    if (hours%12 == 0 && minutes == 0) 
     {
-      ifttt_webhook("Board status", "ok", timeClient.getFormattedTime().c_str());
+      ifttt_webhook("Board status", true, timeClient.getFormattedTime().c_str());
     }
   }
 

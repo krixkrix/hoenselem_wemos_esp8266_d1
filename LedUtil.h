@@ -1,3 +1,7 @@
+#ifndef LED_UTIL_H
+#define LED_UTIL_H
+
+
 // PINs
 const int RedLED = D3;  // D8 is best used for output, since it is pulled to ground
 const int GreenLED = D8;
@@ -38,3 +42,5 @@ void setRed(int on)
 {
     digitalWrite(RedLED, on);
 }
+
+#endif

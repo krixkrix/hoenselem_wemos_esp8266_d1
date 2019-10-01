@@ -1,4 +1,8 @@
-   #include <ESP8266HTTPClient.h>
+#ifndef GOOGLE_CONFIG_H
+#define GOOGLE_CONFIG_H
+
+#include <ESP8266HTTPClient.h>
+#include "IftttReporting.h"
 
 // config is stored in a public google spreadsheet
 // note the URL contains the doc ID , the modifier "format=csv", and a specific cell range
@@ -60,7 +64,7 @@ bool getGoogleConfig(Config& config)
       r++;
   }
   if(r==30) {
-    Serial.println("Connection failed");
+    ifttt_webhook("Google connection", false, "Connection failed");
     return false;
   }
 
@@ -133,3 +137,6 @@ bool getGoogleConfig(Config& config)
 
  return true;
 }
+
+
+#endif

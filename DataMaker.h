@@ -1,3 +1,6 @@
+#ifndef IFTTT_DATAMAKER_H
+#define IFTTT_DATAMAKER_H
+
 /**
  * Class to build and send a HTTP post request to ifttt webhook
  * copied from
@@ -116,3 +119,5 @@ void DataToMaker::compileData()
   }
   else dataAvailable = false;
 }
+
+#endif
