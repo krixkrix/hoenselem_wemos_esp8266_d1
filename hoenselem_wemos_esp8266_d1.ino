@@ -27,6 +27,7 @@ NTPClient timeClient(ntpUDP, poolServerName, TIMEZONE_OFFSET_HOURS*3600, UPDATE_
 
 // Configuration synced from web
 Config config;
+Config configTmp;
 
 // working variables
 int minutes_previous = -1;
@@ -37,10 +38,15 @@ void setup()
   setupLEDs();
   
   Serial.begin(115200);
-  
-  connectWifi();
-  config.sync();
 
+  WiFi.mode(WIFI_OFF);        //Prevents reconnection issue (taking too long to connect)
+  delay(1000);
+  WiFi.mode(WIFI_STA);        //Only Station No AP, This line hides the viewing of ESP as wifi hotspot
+  
+  connectWifi();  
+  getGoogleConfig(config);
+  config.print();
+  
   setGreen(HIGH);
   setRed(HIGH);
   timeClient.begin();
@@ -69,37 +75,9 @@ void setup()
   */
 
   char buf[50];
-  sprintf(buf, "Now: %s, Open: %02d:%02d, Close: %02d:%02d", timeClient.getFormattedTime().c_str(), config.open_hour, config.open_minutes, config.close_hour, config.close_minutes);
+  sprintf(buf, "Now: %s", timeClient.getFormattedTime().c_str());
   ifttt_webhook("Board initialized", "ok", buf);
   
-}
-
-void connectWifi() {
-  if ( WiFi.status() != WL_CONNECTED ) {
-    Serial.println("Connecting WiFi");
-    WiFi.begin(ssid, password);
-
-    int i = 0;
-    const int delayMs = 200;
-    while ( WiFi.status() != WL_CONNECTED ) 
-    {
-      delay (delayMs);
-      toggleRedAndGreen();
-      Serial.print ( "." );
-      i++;
-      if (i*delayMs/1000 > WifiTimeoutSeconds)
-      {
-        // give up
-        break;
-      }
-    }
-  }
-  if ( WiFi.status() == WL_CONNECTED ) {
-    Serial.println("Wifi OK");
-  }
-  else {
-    Serial.println("Wifi FAILED");
-  }
 }
 
 
@@ -113,6 +91,33 @@ void loop()
   {
     Serial.print("Time is: ");
     Serial.println(timeClient.getFormattedTime());
+
+    // check config if it is time
+    if (minutes % config.poll_interval_minutes == 0)
+    {
+      // get config      
+      if (getGoogleConfig(configTmp))
+      {
+        if (!config.equals(configTmp))
+        {
+          Serial.println("New config");
+          config = configTmp;
+          config.print();
+        }
+      }
+      else {
+        Serial.println("Failed to get config");
+      }
+    }
+
+    if (config.force_open) 
+    {
+      doorOpen();
+    }
+    else if (config.force_close) 
+    {
+      doorClose();
+    }
     
     minutes_previous = minutes;
     int hours = timeClient.getHours();
@@ -127,7 +132,7 @@ void loop()
     }
 
     if (hours%3 == 0 && minutes == 0) 
-    { 
+    {
       ifttt_webhook("Board status", "ok", timeClient.getFormattedTime().c_str());
     }
   }
@@ -171,7 +176,7 @@ void loop()
     delay(300);
   }
 
-/*
+  /*
   if (doorIsClosed())
   {
     Serial.println("Door closed");

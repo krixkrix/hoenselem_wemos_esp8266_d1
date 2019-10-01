@@ -50,6 +50,11 @@ void doorToggleState()
 
 bool doorOpen() 
 {
+  if (doorIsOpen())
+  {
+    Serial.println("already open");
+    return true;
+  }
   Serial.println("opening door");
   setRed(LOW);
   startMove(1);
@@ -94,6 +99,12 @@ bool doorOpen()
 
 bool doorClose() 
 {
+  if (doorIsClosed())
+  {
+    Serial.println("already closed");
+    return true;
+  }
+  
   Serial.println("closing door");
   setGreen(LOW);
   startMove(-1);

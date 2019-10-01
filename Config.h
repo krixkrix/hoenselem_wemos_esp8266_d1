@@ -1,48 +1,135 @@
-#include <ESP8266HTTPClient.h>
+   #include <ESP8266HTTPClient.h>
 
 // config is stored in a public google spreadsheet
-// note the URL contains the doc ID and the modifier "format=csv"
-const char* GetURL = "https://docs.google.com/spreadsheets/d/1mWT1SBtN5EKl85kzLBuUofBARWZpKznMYA6NtNMP_4Q/export?gid=0&format=csv";
-// const char* DocumentId = "1mWT1SBtN5EKl85kzLBuUofBARWZpKznMYA6NtNMP_4Q";
+// note the URL contains the doc ID , the modifier "format=csv", and a specific cell range
 
-class Config
-{
-  public:
-    Config();
-    bool sync();
+const char* host = "docs.google.com";
+const String link = "/spreadsheets/d/1mWT1SBtN5EKl85kzLBuUofBARWZpKznMYA6NtNMP_4Q/export?gid=0&format=csv&range=A3:B9";  // The RANGE here is crucial
+const char fingerprint[] PROGMEM = "8D 80 59 8E C1 8A 28 15 C0 CF 83 80 00 4B F7 F2 86 F9 B1 1C";
 
-  public:
-    int open_hour = 07;
-    int open_minutes = 10;
-    int close_hour = 19;
-    int close_minutes = 30;
+const int httpsPort = 443;
 
-  private:
-    HTTPClient http;
+class Config {
+
+public:
+  int open_hour = 8;
+  int open_minutes = 00;
+  int close_hour = 20;
+  int close_minutes = 00;
+  int poll_interval_minutes = 10;
+  int force_open = 0;
+  int force_close = 0;
+
+  void format(char* buf) 
+  {
+    sprintf(buf, "Open: %02d:%02d, Close: %02d:%02d", open_hour, open_minutes, close_hour, close_minutes);
+  }
+
+  void print() {
+    char buf[100];
+    format(buf);
+    Serial.println(buf);
+  }
+
+  bool equals(const Config& other)
+  {
+    return open_hour == other.open_hour
+    && open_minutes == other.open_minutes
+    && close_hour == other.close_hour
+    && close_minutes == other.close_minutes
+    && poll_interval_minutes == other.poll_interval_minutes
+    && force_open == other.force_open
+    && force_close == other.force_close;
+  }
 };
 
-Config::Config()
-{
 
-}
-
-bool Config::sync()
+bool getGoogleConfig(Config& config)
 {
-  http.begin(GetURL);
-  int httpCode = http.GET();
-  if (httpCode > 0) { //Check the returning code
-    String payload = http.getString();
-    
-    // TODO parse response
-    // expected a key/value pair list like
-    /*
-    open_hour,6
-    open_minutes,59
-    close_hour,20
-    close_minutes,30
-    */
-    Serial.println(payload);
+ 
+  WiFiClientSecure httpsClient;
+
+  httpsClient.setFingerprint(fingerprint);
+  httpsClient.setTimeout(15000); // 15 Seconds
+
+  Serial.print("HTTPS Connecting");
+  int r=0; //retry counter
+  while((!httpsClient.connect(host, httpsPort)) && (r < 30)){
+      delay(100);
+      Serial.print(".");
+      r++;
   }
-  http.end();
-  return true;
+  if(r==30) {
+    Serial.println("Connection failed");
+    return false;
+  }
+
+  
+  Serial.println("Connected to web");  
+  // Serial.print("requesting URL: ");
+  // Serial.println(host+link);
+ 
+  httpsClient.print(String("GET ") + link + " HTTP/1.1\r\n" +
+               "Host: " + host + "\r\n" +               
+               "Connection: close\r\n\r\n");
+ 
+  // Serial.println("request sent");
+                  
+  while (httpsClient.connected()) {
+    String line = httpsClient.readStringUntil('\n');
+    if (line == "\r") {
+      // Serial.println("headers received");
+      break;
+    }
+  }
+
+
+  // example reply
+  /*
+   open_hour,23
+   open_minutes,59
+   close_hour,12
+   close_minutes,13
+  */
+
+  int n = 0;
+
+  // Serial.println("=== reply was: ===");
+  String line;
+  while(httpsClient.available()){   
+    line = httpsClient.readStringUntil('\n');  // Read Line by Line
+    // Serial.println(line); //Print response
+
+    if (
+      sscanf(line.c_str(), "open_minutes,%d", &config.open_minutes) > 0
+      || sscanf(line.c_str(), "open_hour,%d", &config.open_hour) > 0
+      || sscanf(line.c_str(), "close_minutes,%d", &config.close_minutes) > 0
+      || sscanf(line.c_str(), "close_hour,%d", &config.close_hour) > 0
+      || sscanf(line.c_str(), "poll_interval_minutes,%d", &config.poll_interval_minutes) > 0
+      || sscanf(line.c_str(), "force_open,%d", &config.force_open) > 0
+      || sscanf(line.c_str(), "force_close,%d", &config.force_close) > 0
+        ) {
+        n++;
+    }
+    else {
+      Serial.println("Line was not recognized");
+    }
+ }
+
+ // don't accept any errors
+ if (config.poll_interval_minutes < 1
+      || config.open_hour < 1 
+      || config.open_hour > 24
+      || config.close_hour < 1
+      || config.close_hour > 24
+      || config.open_minutes < 0 
+      || config.open_minutes > 59
+      || config.close_minutes < 0
+      || config.close_minutes > 59
+      || n < 7)
+ {
+   return false;
+ }
+
+ return true;
 }
