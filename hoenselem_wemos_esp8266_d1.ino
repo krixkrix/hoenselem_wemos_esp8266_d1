@@ -34,9 +34,9 @@ void setup()
   Serial.begin(115200);
 
   WiFi.mode(WIFI_OFF);        //Prevents reconnection issue (taking too long to connect)
-  delay(1000);
+  delay(2000);
   WiFi.mode(WIFI_STA);        //Only Station No AP, This line hides the viewing of ESP as wifi hotspot
-  
+  delay(1000);
   connectWifi();  
   
   setGreen(HIGH);
@@ -56,6 +56,8 @@ void setup()
   Serial.print("Time is: ");
   Serial.println(timeClient.getFormattedTime());
 
+  ifttt_webhook("Boot v1", true, timeClient.getFormattedTime().c_str());
+
   doorStateInit();
 
   getGoogleConfig(config);
@@ -68,9 +70,7 @@ void setup()
   config.close_minutes = config.open_minutes + 2;
   */
 
-  char buf[100];
-  config.format(buf); 
-  ifttt_webhook("Board initialized", true, buf);
+  ifttt_webhook("Config", true, config.formatted());
 }
 
 
@@ -94,9 +94,7 @@ void loop()
         if (!config.equals(configTmp))
         {
           config = configTmp;
-          char buf[100];
-          config.format(buf); 
-          ifttt_webhook("New Config", true, buf);
+          ifttt_webhook("New Config", true, config.formatted());
         }
       }
       else {
@@ -126,7 +124,7 @@ void loop()
     }
 
     // log status every X hours
-    if (hours%12 == 0 && minutes == 0) 
+    if (hours%1 == 0 && minutes%30 == 0) 
     {
       ifttt_webhook("Board status", true, timeClient.getFormattedTime().c_str());
     }
@@ -168,19 +166,8 @@ void loop()
         }
       }
     }
-    delay(300);
+    delay(400);
   }
 
-  /*
-  if (doorIsClosed())
-  {
-    Serial.println("Door closed");
-  }
-  if (doorIsOpen())
-  {
-    Serial.println("Door open");
-  }
-  */
-  
   delay(100);
 }

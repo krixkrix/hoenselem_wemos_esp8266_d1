@@ -8,9 +8,7 @@
 // curl --header "Content-Type: application/json" --request POST --data '{"value1":"xyz","value2":"another value"}' http://maker.ifttt.com/trigger/chickendoor/with/key/bl6Mm_2AoLXuaTuRyFJlrR
 
 // declare new maker event with (maker key, event name)
-DataToMaker event("bl6Mm_2AoLXuaTuRyFJlrR", "chickendoor");
-DataToMaker error_event("bl6Mm_2AoLXuaTuRyFJlrR", "chickendoor_error");
-
+DataToMaker event("bl6Mm_2AoLXuaTuRyFJlrR");
 
 void ifttt_webhook(const char* eventname, bool success, const char* msg)
 {
@@ -27,7 +25,7 @@ void ifttt_webhook(const char* eventname, bool success, const char* msg)
   event.setValue(3, msg);
   if (event.connect())
   {
-    event.post();
+    event.post("chickendoor");
   }
   else 
   {
@@ -37,16 +35,13 @@ void ifttt_webhook(const char* eventname, bool success, const char* msg)
   // special notification when error
   if (!success)
   {
-    error_event.setValue(1, eventname);
-    error_event.setValue(2, "Failure");
-    error_event.setValue(3, msg);
-    if (error_event.connect())
+    if (event.connect())
     {
-      error_event.post();
+      event.post("chickendoor_error");
     }
     else 
     {
-      Serial.println("ErrorEvent: Failed To Connect To Maker!");
+      Serial.println("Failed To Connect To Maker (chickendoor_error)!");
     }
   }
 }

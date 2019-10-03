@@ -12,7 +12,7 @@ DO NOT submit the file to GIT
 */
 #include "Secrets.h"
 
-int WifiTimeoutSeconds = 20;
+int WifiTimeoutSeconds = 30;
 
 bool isConnected() {
   return WiFi.status() == WL_CONNECTED;

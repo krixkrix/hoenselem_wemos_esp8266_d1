@@ -24,15 +24,15 @@ public:
   int force_open = 0;
   int force_close = 0;
 
-  void format(char* buf) 
+  const char* formatted() 
   {
+    static char buf[40];
     sprintf(buf, "Open: %02d:%02d, Close: %02d:%02d", open_hour, open_minutes, close_hour, close_minutes);
+    return buf;
   }
 
   void print() {
-    char buf[100];
-    format(buf);
-    Serial.println(buf);
+    Serial.println(formatted());
   }
 
   bool equals(const Config& other)
@@ -50,26 +50,31 @@ public:
 
 bool getGoogleConfig(Config& config)
 {
- 
   WiFiClientSecure httpsClient;
 
   httpsClient.setFingerprint(fingerprint);
   httpsClient.setTimeout(15000); // 15 Seconds
 
-  Serial.print("HTTPS Connecting");
-  int r=0; //retry counter
-  while((!httpsClient.connect(host, httpsPort)) && (r < 30)){
-      delay(100);
-      Serial.print(".");
-      r++;
+  Serial.println("HTTPS Connecting");
+  int r=10; //retry counter
+  while (r > 0){
+     connectWifi();
+     if (httpsClient.connect(host, httpsPort))
+     {
+       break;
+     }
+     delay(100);
+     Serial.print(".");
+     r--;
   }
-  if(r==30) {
-    ifttt_webhook("Google connection", false, "Connection failed");
+  if (r==0) {
+    connectWifi();
+    ifttt_webhook("Google config read", false, "Connection failed");
     return false;
   }
 
   
-  Serial.println("Connected to web");  
+  Serial.println("Connected to host");  
   // Serial.print("requesting URL: ");
   // Serial.println(host+link);
  

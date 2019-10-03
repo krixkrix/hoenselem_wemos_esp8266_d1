@@ -13,11 +13,11 @@
 class DataToMaker
 {
   public:
-    DataToMaker(const char*, String); // constructor
+    DataToMaker(const char*); // constructor
     bool connect();
     bool setValue(int, String);
     void sendToMaker();
-    void post();
+    void post(String);
 
   protected: // it is protected because the subclass needs access
     //to max distance!
@@ -26,26 +26,28 @@ class DataToMaker
     void compileData();
     WiFiClient client;
     const char* privateKey;
-    String event;
     String value1, value2, value3 = "";
     bool dataAvailable;
     String postData;
 };
 
-DataToMaker::DataToMaker(const char* _privateKey, String _event)
+DataToMaker::DataToMaker(const char* _privateKey)
 {
   privateKey = _privateKey;
-  event = _event;
 }
 
 bool DataToMaker::connect()
 {
-  if (client.connect("maker.ifttt.com", 80))
-    return true;
-  else return false;
+  int r = 50;  // retries
+  while ((!client.connect("maker.ifttt.com", 80)) && (r > 0)){
+      delay(100);
+      Serial.print(".");
+      r--;
+  }
+  return r>0;
 }
 
-void DataToMaker::post()
+void DataToMaker::post(String event)
 {
   compileData();
   client.print("POST /trigger/");
