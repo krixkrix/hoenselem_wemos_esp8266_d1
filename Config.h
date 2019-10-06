@@ -2,6 +2,7 @@
 #define GOOGLE_CONFIG_H
 
 #include <ESP8266HTTPClient.h>
+#include <StackThunk.h>
 
 // config is stored in a public google spreadsheet
 // note the URL contains the doc ID , the modifier "format=csv", and a specific cell range
@@ -82,6 +83,10 @@ bool getGoogleConfig(Config& config)
     */
   String payload = https.getString();
   Serial.println(payload);
+
+  // debug ...
+  Serial.printf("[%d] ", stack_thunk_get_max_usage());
+  
   https.end();
   newSecure.stop();
 
@@ -103,7 +108,7 @@ bool getGoogleConfig(Config& config)
     latestError = "Parse failure";
     return false;
   }
-  
+
   // don't accept any strange data
   if (config.poll_interval_minutes < 1
       || config.open_hour < 1 

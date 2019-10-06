@@ -10,7 +10,7 @@
 #include "LedUtil.h"
 #include "DoorControl.h"
 
-#define VERSION "v2"
+#define VERSION "v3"
 
 WiFiUDP ntpUDP;
 
@@ -29,6 +29,7 @@ Config configTmp;
 // working variables
 int minutes_previous = -1;
 unsigned long unix_latest_config_update = 0;
+int sequential_config_failures = 0;
 
 void setup()
 {
@@ -117,6 +118,7 @@ void loop()
       if (getGoogleConfig(configTmp))
       {
         unix_latest_config_update = timeClient.getEpochTime();
+        sequential_config_failures = 0;
         if (!config.equals(configTmp))
         {
           config = configTmp;
@@ -124,7 +126,13 @@ void loop()
         }
       }
       else {
-        // ifttt_webhook("Config update", false, getConfigError().c_str());
+        sequential_config_failures++;
+        Serial.print("Config update failed: ");
+        Serial.println(getConfigError().c_str());
+        if (sequential_config_failures % 10 == 0)
+        {
+          ifttt_webhook("Config update", false, getConfigError().c_str());
+        }
       }
     }
 
@@ -148,8 +156,9 @@ void loop()
     }
 
     // log status every X hours
-    if (hours%1 == 0 && minutes%5 == 0) 
+    if (hours%1 == 0 && minutes%1 == 0) 
     {
+      connectWifi();
       char buf[30];
       sprintf(buf, "%s: config age: %d minutes", timeClient.getFormattedTime().c_str(), minutesSinceConfigUpdate());
       ifttt_webhook("Board status", true, buf);
