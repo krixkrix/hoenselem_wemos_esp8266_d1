@@ -2,7 +2,6 @@
 #define GOOGLE_CONFIG_H
 
 #include <ESP8266HTTPClient.h>
-#include <StackThunk.h>
 
 // config is stored in a public google spreadsheet
 // note the URL contains the doc ID , the modifier "format=csv", and a specific cell range
@@ -12,13 +11,16 @@ const int httpsPort = 443;
 const String link = "/spreadsheets/d/1mWT1SBtN5EKl85kzLBuUofBARWZpKznMYA6NtNMP_4Q/export?gid=0&format=csv&range=A3:B9";  // The RANGE here is crucial
 String latestError = "Not initialized";
 
+HTTPClient https;
+BearSSL::WiFiClientSecure newSecure;
+
 class Config {
 
 public:
   int open_hour = 7;
-  int open_minutes = 15;
+  int open_minutes = 12;
   int close_hour = 19;
-  int close_minutes = 30;
+  int close_minutes = 20;
   int poll_interval_minutes = 10;
   int force_open = 0;
   int force_close = 0;
@@ -54,8 +56,6 @@ const String& getConfigError()
 bool getGoogleConfig(Config& config)
 {
   latestError = "";
-  HTTPClient https;
-  BearSSL::WiFiClientSecure newSecure;
 
   // do not use fingerprint since it will change over time
   Serial.println("HTTPS connecting (insecure)");
@@ -84,46 +84,44 @@ bool getGoogleConfig(Config& config)
   String payload = https.getString();
   Serial.println(payload);
 
-  // debug ...
-  Serial.printf("[%d] ", stack_thunk_get_max_usage());
-  
   https.end();
   newSecure.stop();
 
   int n = sscanf(payload.c_str(), 
-                 "open_hour,%d open_minutes,%d close_hour,%d close_minutes,%d poll_interval_minutes,%d force_open,%d force_close,%d", 
-                 &config.open_hour,
-                 &config.open_minutes, 
-                 &config.close_hour,
-                 &config.close_minutes,
-                 &config.poll_interval_minutes,
-                 &config.force_open,
-                 &config.force_close);           
-  
-  Serial.print("Got paramters: ");
-  Serial.println(n);
+                "open_hour,%d open_minutes,%d close_hour,%d close_minutes,%d poll_interval_minutes,%d force_open,%d force_close,%d", 
+                &config.open_hour,
+                &config.open_minutes, 
+                &config.close_hour,
+                &config.close_minutes,
+                &config.poll_interval_minutes,
+                &config.force_open,
+                &config.force_close);           
+ 
+ Serial.print("Got paramters: ");
+ Serial.println(n);
 
-  if (n!=7) 
-  {
-    latestError = "Parse failure";
-    return false;
-  }
+ if (n!=7) 
+ {
+   latestError = "Parse failure";
+   return false;
+ }
 
-  // don't accept any strange data
-  if (config.poll_interval_minutes < 1
-      || config.open_hour < 1 
-      || config.open_hour > 24
-      || config.close_hour < 1
-      || config.close_hour > 24
-      || config.open_minutes < 0 
-      || config.open_minutes > 59
-      || config.close_minutes < 0
-      || config.close_minutes > 59
-      || n != 7)
+ // don't accept any strange data
+ if (config.poll_interval_minutes < 1
+     || config.open_hour < 1 
+     || config.open_hour > 24
+     || config.close_hour < 1
+     || config.close_hour > 24
+     || config.open_minutes < 0 
+     || config.open_minutes > 59
+     || config.close_minutes < 0
+     || config.close_minutes > 59
+     || n != 7)
   {
     latestError = "Bad content";
     return false;
   }
+
   return true;  // success
 }
 

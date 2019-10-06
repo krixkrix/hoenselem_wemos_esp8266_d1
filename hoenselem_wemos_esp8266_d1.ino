@@ -112,7 +112,7 @@ void loop()
     Serial.println(timeClient.getFormattedTime());
 
     // update config with configured interval
-    if (minutes % config.poll_interval_minutes == 0 || configIsTooOld())
+    if (config.poll_interval_minutes > 0 && minutes % config.poll_interval_minutes == 0)
     {
       // get config
       if (getGoogleConfig(configTmp))
@@ -146,17 +146,17 @@ void loop()
     }
     
   
-    if (config.open_hour == hours && (config.open_minutes == minutes || config.open_minutes+1 == minutes)) 
+    if (config.open_hour == hours && config.open_minutes >= minutes) 
     {
       doorOpen();
     }
-    else if (config.close_hour == hours && (config.close_minutes == minutes || config.close_minutes+1 == minutes)) 
+    else if (config.close_hour == hours && config.close_minutes >= minutes) 
     {
       doorClose();
     }
 
     // log status every X hours
-    if (hours%1 == 0 && minutes%1 == 0) 
+    if (hours%1 == 0 && minutes == 0)
     {
       connectWifi();
       char buf[30];
