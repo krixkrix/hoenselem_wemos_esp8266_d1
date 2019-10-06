@@ -12,7 +12,6 @@ DataToMaker event("bl6Mm_2AoLXuaTuRyFJlrR");
 
 void ifttt_webhook(const char* eventname, bool success, const char* msg)
 {
-  connectWifi();
   Serial.print(eventname);
   Serial.print(": ");
   Serial.print(success ? "ok" : "failure");
