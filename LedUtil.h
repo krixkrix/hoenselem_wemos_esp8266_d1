@@ -3,8 +3,8 @@
 
 
 // PINs
-const int RedLED = D3;  // D8 is best used for output, since it is pulled to ground
-const int GreenLED = D8;
+const int RedLED = D3;  
+const int GreenLED = D8;  // D8 is best used for output, since it is pulled to ground
 
 
 void setupLEDs()

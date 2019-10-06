@@ -1,3 +1,4 @@
+// Project intended for board: "WeMos D1 R1"
 #include <SD.h>
 
 #include <NTPClient.h>
@@ -8,6 +9,8 @@
 #include "WifiUtil.h"
 #include "LedUtil.h"
 #include "DoorControl.h"
+
+#define VERSION "v2"
 
 WiFiUDP ntpUDP;
 
@@ -25,19 +28,18 @@ Config configTmp;
 
 // working variables
 int minutes_previous = -1;
-
+unsigned long unix_latest_config_update = 0;
 
 void setup()
 {
   setupLEDs();
   
   Serial.begin(115200);
-
-  WiFi.mode(WIFI_OFF);        //Prevents reconnection issue (taking too long to connect)
-  delay(2000);
-  WiFi.mode(WIFI_STA);        //Only Station No AP, This line hides the viewing of ESP as wifi hotspot
-  delay(1000);
-  connectWifi();  
+  WiFi.mode(WIFI_OFF);  // Prevents reconnection issue (taking too long to connect)
+  delay(500);
+  WiFi.mode(WIFI_STA);  // Only Station No AP, This line hides the viewing of ESP as wifi hotspot
+  delay(500);
+  connectWifi();
   
   setGreen(HIGH);
   setRed(HIGH);
@@ -56,11 +58,10 @@ void setup()
   Serial.print("Time is: ");
   Serial.println(timeClient.getFormattedTime());
 
-  ifttt_webhook("Boot v1", true, timeClient.getFormattedTime().c_str());
+  ifttt_webhook("Boot "VERSION, true, timeClient.getFormattedTime().c_str());
 
   doorStateInit();
 
-  getGoogleConfig(config);
 
   // TEST CODE TO INJECT TIME TRIGGERS
   /*
@@ -70,35 +71,60 @@ void setup()
   config.close_minutes = config.open_minutes + 2;
   */
 
-  ifttt_webhook("Config", true, config.formatted());
+  bool ok = getGoogleConfig(config);
+  
+  ifttt_webhook("Config init", ok, ok ? config.formatted() : getConfigError().c_str());
+
+  if (ok) 
+  {
+    unix_latest_config_update = timeClient.getEpochTime();
+  }
+  else 
+  {
+    ifttt_webhook("Config fallback", true, config.formatted());
+  }
 }
 
+unsigned long minutesSinceConfigUpdate() 
+{
+  return (timeClient.getEpochTime() - unix_latest_config_update)/60;
+}
+
+bool configIsTooOld() 
+{
+  return minutesSinceConfigUpdate() > 60;
+}
 
 void loop() 
 {
+  setGreen(HIGH);
   timeClient.update();
 
   int minutes = timeClient.getMinutes();
-
   if (minutes != minutes_previous) 
   {
+    setGreen(LOW);
+    minutes_previous = minutes;
+    int hours = timeClient.getHours();
+    
     Serial.print("Time is: ");
     Serial.println(timeClient.getFormattedTime());
 
-    // check config if it is time
-    if (minutes % config.poll_interval_minutes == 0)
+    // update config with configured interval
+    if (minutes % config.poll_interval_minutes == 0 || configIsTooOld())
     {
-      // get config      
+      // get config
       if (getGoogleConfig(configTmp))
       {
+        unix_latest_config_update = timeClient.getEpochTime();
         if (!config.equals(configTmp))
         {
           config = configTmp;
-          ifttt_webhook("New Config", true, config.formatted());
+          ifttt_webhook("Config update", true, config.formatted());
         }
       }
       else {
-        Serial.println("Failed to get config");
+        // ifttt_webhook("Config update", false, getConfigError().c_str());
       }
     }
 
@@ -111,28 +137,28 @@ void loop()
       doorClose();
     }
     
-    minutes_previous = minutes;
-    int hours = timeClient.getHours();
-
-    if (config.open_hour == hours && config.open_minutes == minutes) 
+  
+    if (config.open_hour == hours && (config.open_minutes == minutes || config.open_minutes+1 == minutes)) 
     {
       doorOpen();
     }
-    else if (config.close_hour == hours && config.close_minutes == minutes) 
+    else if (config.close_hour == hours && (config.close_minutes == minutes || config.close_minutes+1 == minutes)) 
     {
       doorClose();
     }
 
     // log status every X hours
-    if (hours%1 == 0 && minutes%30 == 0) 
+    if (hours%1 == 0 && minutes%5 == 0) 
     {
-      ifttt_webhook("Board status", true, timeClient.getFormattedTime().c_str());
+      char buf[30];
+      sprintf(buf, "%s: config age: %d minutes", timeClient.getFormattedTime().c_str(), minutesSinceConfigUpdate());
+      ifttt_webhook("Board status", true, buf);
     }
   }
 
+  setGreen(HIGH);
   if (doorButtonPressed())
   {
-    static int n = 1;
     Serial.println("Button press");
 
     if (doorIsMoving())
@@ -169,5 +195,5 @@ void loop()
     delay(400);
   }
 
-  delay(100);
+  delay(150);
 }
