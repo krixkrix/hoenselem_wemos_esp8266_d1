@@ -38,10 +38,10 @@ DataToMaker::DataToMaker(const char* _privateKey)
 
 bool DataToMaker::connect()
 {
-  int r = 50;  // retries
+  int r = 3;  // retries
   while ((!client.connect("maker.ifttt.com", 80)) && (r > 0)){
       delay(100);
-      Serial.print(".");
+      Serial.print("*");
       r--;
   }
   return r>0;

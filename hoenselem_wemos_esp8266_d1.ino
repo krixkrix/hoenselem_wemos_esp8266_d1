@@ -146,11 +146,11 @@ void loop()
     }
     
   
-    if (config.open_hour == hours && config.open_minutes >= minutes) 
+    if (config.open_hour == hours && config.open_minutes <= minutes) 
     {
       doorOpen();
     }
-    else if (config.close_hour == hours && config.close_minutes >= minutes) 
+    else if (config.close_hour == hours && config.close_minutes <= minutes) 
     {
       doorClose();
     }

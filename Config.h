@@ -18,9 +18,9 @@ class Config {
 
 public:
   int open_hour = 7;
-  int open_minutes = 12;
+  int open_minutes = 20;
   int close_hour = 19;
-  int close_minutes = 20;
+  int close_minutes = 00;
   int poll_interval_minutes = 10;
   int force_open = 0;
   int force_close = 0;
@@ -107,7 +107,7 @@ bool getGoogleConfig(Config& config)
  }
 
  // don't accept any strange data
- if (config.poll_interval_minutes < 1
+ if (config.poll_interval_minutes < 0
      || config.open_hour < 1 
      || config.open_hour > 24
      || config.close_hour < 1
