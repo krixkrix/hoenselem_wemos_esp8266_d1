@@ -159,7 +159,7 @@ void loop()
     if (hours%1 == 0 && minutes == 0)
     {
       connectWifi();
-      char buf[30];
+      char buf[35];
       sprintf(buf, F("%s: config age: %d minutes"), timeClient.getFormattedTime().c_str(), minutesSinceConfigUpdate());
       ifttt_webhook(F("Status"), true, buf);
     }
