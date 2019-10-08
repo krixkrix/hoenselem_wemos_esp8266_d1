@@ -58,7 +58,7 @@ void setup()
     timeClient.update();
   }
 
-  ifttt_webhook(F("Boot"), true, timeClient.getFormattedTime().c_str());
+  ifttt_webhook(F("Boot"), true, ("At "+timeClient.getFormattedTime()).c_str());
 
   doorStateInit();
 
@@ -107,12 +107,13 @@ void loop()
     minutes_previous = minutes;
     int hours = timeClient.getHours();
     
-    Serial.print("Time is: ");
+    Serial.print(F("Time is: "));
     Serial.println(timeClient.getFormattedTime());
 
     // update config with configured interval
     if (config.poll_interval_minutes > 0 && minutes % config.poll_interval_minutes == 0)
     {
+      connectWifi();
       // get config
       if (getGoogleConfig(configTmp))
       {

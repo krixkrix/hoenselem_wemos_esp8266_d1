@@ -9,7 +9,7 @@
 const char* host = "docs.google.com";
 const int httpsPort = 443;
 const char* link = "/spreadsheets/d/1mWT1SBtN5EKl85kzLBuUofBARWZpKznMYA6NtNMP_4Q/export?gid=0&format=csv&range=A3:B9";  // The RANGE here is crucial
-char*  latestError = "none";
+char * latestError = "none";
 
 HTTPClient https;
 BearSSL::WiFiClientSecure newSecure;
@@ -55,7 +55,7 @@ const String& getConfigError()
 }
 
 bool getGoogleConfig(Config& config)
-{
+{    
   latestError = "";
 
   // do not use fingerprint since it will change over time
@@ -103,7 +103,7 @@ bool getGoogleConfig(Config& config)
 
  if (n!=7) 
  {
-   latestError = F("Parse failure");
+   latestError =  "Parse failure";
    return false;
  }
 
@@ -119,7 +119,7 @@ bool getGoogleConfig(Config& config)
      || config.close_minutes > 59
      || n != 7)
   {
-    latestError = F("Bad content");
+    latestError = "Bad content";
     return false;
   }
 
