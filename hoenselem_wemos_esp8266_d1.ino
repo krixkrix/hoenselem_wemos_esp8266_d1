@@ -58,7 +58,7 @@ void setup()
     timeClient.update();
   }
 
-  ifttt_webhook(F("Boot"), true, ("At "+timeClient.getFormattedTime()).c_str());
+  ifttt_webhook(F("Boot"), true, ("Init "+timeClient.getFormattedTime()).c_str());
 
   doorStateInit();
 
