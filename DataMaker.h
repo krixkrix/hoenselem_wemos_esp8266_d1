@@ -17,7 +17,7 @@ class DataToMaker
     bool connect();
     bool setValue(int, String);
     void sendToMaker();
-    void post(String);
+    void post(const char*);
 
   protected: // it is protected because the subclass needs access
     //to max distance!
@@ -47,22 +47,22 @@ bool DataToMaker::connect()
   return r>0;
 }
 
-void DataToMaker::post(String event)
+void DataToMaker::post(const char* event)
 {
   compileData();
-  client.print("POST /trigger/");
+  client.print(F("POST /trigger/"));
   client.print(event);
-  client.print("/with/key/");
+  client.print(F("/with/key/"));
   client.print(privateKey);
-  client.println(" HTTP/1.1");
+  client.println(F(" HTTP/1.1"));
 
-  client.println("Host: maker.ifttt.com");
-  client.println("User-Agent: Arduino/1.0");
-  client.println("Connection: close");
+  client.println(F("Host: maker.ifttt.com"));
+  client.println(F("User-Agent: Arduino/1.0"));
+  client.println(F("Connection: close"));
   if (dataAvailable)
   { // append json values if available
-    client.println("Content-Type: application/json");
-    client.print("Content-Length: ");
+    client.println(F("Content-Type: application/json"));
+    client.print(F("Content-Length: "));
     client.println(postData.length());
     client.println();
     client.println(postData);
@@ -100,24 +100,30 @@ void DataToMaker::compileData()
     postData = "{";
     if (value1 != "")
     {
-      postData.concat("\"value1\":\"");
+      postData.concat(F("\"value1\":\""));
       postData.concat(value1);
       valueEntered = true;
     }
     if (value2 != "")
     {
-      if (valueEntered)postData.concat("\",");
-      postData.concat("\"value2\":\"");
+      if (valueEntered)
+      {
+        postData.concat(F("\","));
+      }
+      postData.concat(F("\"value2\":\""));
       postData.concat(value2);
       valueEntered = true;
     }
     if (value3 != "")
     {
-      if (valueEntered)postData.concat("\",");
-      postData.concat("\"value3\":\"");
+      if (valueEntered)
+      {
+        postData.concat(F("\","));
+      }
+      postData.concat(F("\"value3\":\""));
       postData.concat(value3);
     }
-    postData.concat("\"}");
+    postData.concat(F("\"}"));
   }
   else dataAvailable = false;
 }

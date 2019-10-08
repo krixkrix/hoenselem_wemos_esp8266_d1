@@ -80,10 +80,10 @@ bool doorOpen()
 {
   if (doorIsOpen())
   {
-    Serial.println("already open");
+    Serial.println(F("already open"));
     return true;
   }
-  Serial.println("opening door");
+  Serial.println(F("opening door"));
   setRed(LOW);
   startMove(1);
   for (int dt = 0; dt < DoorTimeoutMs; dt+=LoopSleep) 
@@ -100,7 +100,7 @@ bool doorOpen()
     if (doorButtonPressed() && dt > 500) 
     {
       // cancel the move
-      Serial.println("Cancel door open");
+      Serial.println(F("Cancel open"));
       break;
     }
     delay(LoopSleep);
@@ -111,16 +111,16 @@ bool doorOpen()
   if (!doorIsOpen())
   {
     setGreen(LOW);
-    report_door_open(false, "ERROR: door open switch NOT active");
+    report_door_open(false, F("ERROR: open switch NOT active"));
     return false;
   }
   if (doorIsClosed())
   {
-    report_door_open(false, "ERROR: door closed switch active");
+    report_door_open(false, F("ERROR: closed switch active"));
     return false;
   }
   
-  report_door_open(true, "Door is now open");
+  report_door_open(true, F("Door now open"));
   delay(500);
   return true;
 }
@@ -129,11 +129,11 @@ bool doorClose()
 {
   if (doorIsClosed())
   {
-    Serial.println("already closed");
+    Serial.println(F("already closed"));
     return true;
   }
   
-  Serial.println("closing door");
+  Serial.println(F("closing door"));
   setGreen(LOW);
   startMove(-1);
   for (int dt = 0; dt < DoorTimeoutMs; dt+=LoopSleep) 
@@ -150,7 +150,7 @@ bool doorClose()
     if (doorButtonPressed() && dt > 500)
     {
       // cancel the move
-      Serial.println("Cancel door close");
+      Serial.println(F("Cancel close"));
       break;
     }
     delay(LoopSleep);
@@ -161,16 +161,16 @@ bool doorClose()
   if (!doorIsClosed())
   {
     setRed(LOW);
-    report_door_closed(false, "ERROR: door closed switch NOT active");
+    report_door_closed(false, F("ERROR: closed switch NOT active"));
     return false;
   }
   if (doorIsOpen())
   {
-    report_door_closed(false, "ERROR: door open switch active");
+    report_door_closed(false, F("ERROR: open switch active"));
     return false;
   }
   
-  report_door_closed(true, "Door is now closed");
+  report_door_closed(true, F("Door now closed"));
   delay(500);
   return true;
 }

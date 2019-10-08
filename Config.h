@@ -8,11 +8,13 @@
 
 const char* host = "docs.google.com";
 const int httpsPort = 443;
-const String link = "/spreadsheets/d/1mWT1SBtN5EKl85kzLBuUofBARWZpKznMYA6NtNMP_4Q/export?gid=0&format=csv&range=A3:B9";  // The RANGE here is crucial
-String latestError = "Not initialized";
+const char* link = "/spreadsheets/d/1mWT1SBtN5EKl85kzLBuUofBARWZpKznMYA6NtNMP_4Q/export?gid=0&format=csv&range=A3:B9";  // The RANGE here is crucial
+char*  latestError = "none";
 
 HTTPClient https;
 BearSSL::WiFiClientSecure newSecure;
+
+static char cbuf[40];
 
 class Config {
 
@@ -27,9 +29,8 @@ public:
 
   const char* formatted() 
   {
-    static char buf[40];
-    sprintf(buf, "Open: %02d:%02d, Close: %02d:%02d, Poll: %d", open_hour, open_minutes, close_hour, close_minutes, poll_interval_minutes);
-    return buf;
+    sprintf(cbuf, F("Open: %02d:%02d, Close: %02d:%02d, Poll: %d"), open_hour, open_minutes, close_hour, close_minutes, poll_interval_minutes);
+    return cbuf;
   }
 
   void print() {
@@ -58,18 +59,18 @@ bool getGoogleConfig(Config& config)
   latestError = "";
 
   // do not use fingerprint since it will change over time
-  Serial.println("HTTPS connecting (insecure)");
+  Serial.println(F("HTTPS connect"));
   newSecure.setInsecure();
-  https.begin(newSecure, host, httpsPort, link.c_str(), true);
+  https.begin(newSecure, host, httpsPort, link, true);
 
   int code = https.GET();
   if (code != 200)
   {
     https.end();
     newSecure.stop();
-    Serial.print("Https failed, code: ");
+    Serial.print(F("Https failed, code: "));
     Serial.println(code);
-    latestError = "connect failure";
+    latestError = F("connect failure");
     return false;
   }
   
@@ -88,7 +89,7 @@ bool getGoogleConfig(Config& config)
   newSecure.stop();
 
   int n = sscanf(payload.c_str(), 
-                "open_hour,%d open_minutes,%d close_hour,%d close_minutes,%d poll_interval_minutes,%d force_open,%d force_close,%d", 
+                F("open_hour,%d open_minutes,%d close_hour,%d close_minutes,%d poll_interval_minutes,%d force_open,%d force_close,%d"), 
                 &config.open_hour,
                 &config.open_minutes, 
                 &config.close_hour,
@@ -97,12 +98,12 @@ bool getGoogleConfig(Config& config)
                 &config.force_open,
                 &config.force_close);           
  
- Serial.print("Got paramters: ");
+ Serial.print(F("Got params: "));
  Serial.println(n);
 
  if (n!=7) 
  {
-   latestError = "Parse failure";
+   latestError = F("Parse failure");
    return false;
  }
 
@@ -118,7 +119,7 @@ bool getGoogleConfig(Config& config)
      || config.close_minutes > 59
      || n != 7)
   {
-    latestError = "Bad content";
+    latestError = F("Bad content");
     return false;
   }
 

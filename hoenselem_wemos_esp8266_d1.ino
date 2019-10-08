@@ -10,8 +10,6 @@
 #include "LedUtil.h"
 #include "DoorControl.h"
 
-#define VERSION "v3"
-
 WiFiUDP ntpUDP;
 
 /**
@@ -49,17 +47,18 @@ void setup()
   setRed(LOW);
 
   timeClient.forceUpdate();
-  Serial.println();
-  Serial.print("Time is: ");
-  Serial.println(timeClient.getFormattedTime());
-  // sometimes the first timestamp is wrong...?
-  delay(200);  
-  timeClient.update();
-  Serial.println();
-  Serial.print("Time is: ");
-  Serial.println(timeClient.getFormattedTime());
 
-  ifttt_webhook("Boot "VERSION, true, timeClient.getFormattedTime().c_str());
+  // sometimes the first timestamp is wrong...?
+  for (int i=0; i<2; i++)
+  {
+    Serial.println();
+    Serial.print(F("Time is: "));
+    Serial.println(timeClient.getFormattedTime());
+    delay(200);  
+    timeClient.update();
+  }
+
+  ifttt_webhook(F("Boot"), true, timeClient.getFormattedTime().c_str());
 
   doorStateInit();
 
@@ -74,7 +73,7 @@ void setup()
 
   bool ok = getGoogleConfig(config);
   
-  ifttt_webhook("Config init", ok, ok ? config.formatted() : getConfigError().c_str());
+  ifttt_webhook(F("Config"), ok, ok ? config.formatted() : getConfigError().c_str());
 
   if (ok) 
   {
@@ -82,7 +81,7 @@ void setup()
   }
   else 
   {
-    ifttt_webhook("Config fallback", true, config.formatted());
+    ifttt_webhook(F("Fallback"), true, config.formatted());
   }
 }
 
@@ -122,16 +121,16 @@ void loop()
         if (!config.equals(configTmp))
         {
           config = configTmp;
-          ifttt_webhook("Config update", true, config.formatted());
+          ifttt_webhook(F("Config"), true, config.formatted());
         }
       }
       else {
         sequential_config_failures++;
-        Serial.print("Config update failed: ");
+        Serial.print(F("Config failed: "));
         Serial.println(getConfigError().c_str());
         if (sequential_config_failures % 10 == 0)
         {
-          ifttt_webhook("Config update", false, getConfigError().c_str());
+          ifttt_webhook(F("Config"), false, getConfigError().c_str());
         }
       }
     }
@@ -160,15 +159,15 @@ void loop()
     {
       connectWifi();
       char buf[30];
-      sprintf(buf, "%s: config age: %d minutes", timeClient.getFormattedTime().c_str(), minutesSinceConfigUpdate());
-      ifttt_webhook("Board status", true, buf);
+      sprintf(buf, F("%s: config age: %d minutes"), timeClient.getFormattedTime().c_str(), minutesSinceConfigUpdate());
+      ifttt_webhook(F("Status"), true, buf);
     }
   }
 
   setGreen(HIGH);
   if (doorButtonPressed())
   {
-    Serial.println("Button press");
+    Serial.println(F("Button press"));
 
     if (doorIsMoving())
     {
@@ -180,12 +179,12 @@ void loop()
     {
       if (doorIsOpen())
       {
-        Serial.println("door-Is-Open, so close");
+        Serial.println(F("door-Is-Open, so close"));
         doorClose();
       }
       else if (doorIsClosed())
       {
-        Serial.println("door-Is-Closed, so open");
+        Serial.println(F("door-Is-Closed, so open"));
         doorOpen();
       }
       else 

@@ -14,7 +14,7 @@ void ifttt_webhook(const char* eventname, bool success, const char* msg)
 {
   Serial.print(eventname);
   Serial.print(": ");
-  Serial.print(success ? "ok" : "failure");
+  Serial.print(success ? F("ok") : F("fail"));
   Serial.print(": ");
   Serial.println(msg);
 
@@ -22,15 +22,15 @@ void ifttt_webhook(const char* eventname, bool success, const char* msg)
 
   // log message
   event.setValue(1, eventname);
-  event.setValue(2, success ? "ok" : "failure");
+  event.setValue(2, success ? F("ok") : F("fail"));
   event.setValue(3, msg);
   if (event.connect())
   {
-    event.post("chickendoor");
+    event.post(F("chickendoor"));
   }
   else 
   {
-    Serial.println("Failed To Connect To Maker!");
+    Serial.println(F("Failed to connect IFTTTr"));
   }
 
   // special notification when error
@@ -38,23 +38,23 @@ void ifttt_webhook(const char* eventname, bool success, const char* msg)
   {
     if (event.connect())
     {
-      event.post("chickendoor_error");
+      event.post(F("chickendoor_error"));
     }
     else 
     {
-      Serial.println("Failed To Connect To Maker (chickendoor_error)!");
+      Serial.println(F("Failed to connect IFTTT2"));
     }
   }
 }
 
 void report_door_closed(bool ok, const char* msg)
 {
-  ifttt_webhook("Door close", ok, msg);
+  ifttt_webhook(F("Door close"), ok, msg);
 }
 
 void report_door_open(bool ok, const char* msg)
 {
-  ifttt_webhook("Door open", ok, msg);
+  ifttt_webhook(F("Door open"), ok, msg);
 }
 
 #endif

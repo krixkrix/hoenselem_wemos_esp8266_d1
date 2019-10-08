@@ -20,7 +20,7 @@ bool isConnected() {
 
 bool connectWifi() {
   if ( WiFi.status() != WL_CONNECTED ) {
-    Serial.println("Connecting WiFi");
+    Serial.println(F("Connecting WiFi"));
     WiFi.begin(ssid, password);
 
     int i = 0;
@@ -28,7 +28,7 @@ bool connectWifi() {
     while ( WiFi.status() != WL_CONNECTED ) 
     {
       toggleRedAndGreen();
-      Serial.print ( "." );
+      Serial.print( "." );
       if (i*delayMs/1000 > WifiTimeoutSeconds)
       {
         // give up
@@ -40,10 +40,10 @@ bool connectWifi() {
   }
    
   if ( WiFi.status() == WL_CONNECTED ) {
-    Serial.println("Wifi OK");
+    Serial.println(F("Wifi OK"));
   }
   else {
-    Serial.println("Wifi FAILED");
+    Serial.println(F("Wifi FAILED"));
   }
   return WiFi.status() == WL_CONNECTED;
 }
