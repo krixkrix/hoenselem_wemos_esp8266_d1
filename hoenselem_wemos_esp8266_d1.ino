@@ -35,10 +35,13 @@ void setup()
   
   Serial.begin(115200);
   WiFi.mode(WIFI_OFF);  // Prevents reconnection issue (taking too long to connect)
-  delay(500);
+  delay(1000);
   WiFi.mode(WIFI_STA);  // Only Station No AP, This line hides the viewing of ESP as wifi hotspot
-  delay(500);
-  connectWifi();
+  delay(1000);
+  while (!connectWifi())
+  {
+    delay(1000);
+  }
   
   setGreen(HIGH);
   setRed(HIGH);
